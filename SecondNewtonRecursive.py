@@ -10,7 +10,7 @@ def valid_input(number):
         return False
 
 
-def newton_recursive(number, estimate=None, tolerance=1e-10, iteration=1, max_iterations=1000):
+def newton_recursive(number, estimate=None, tolerance=1e-100, max_iterations=1000):
     if number == 0:
         return 0
     if estimate is None:
@@ -25,9 +25,10 @@ def newton_recursive(number, estimate=None, tolerance=1e-10, iteration=1, max_it
 
 while True:
     number = float(input("Enter a non-negative number to square root: "))
-    valid_input(number):
-    result = newton_recursive(number)
-    print(f"Square root of {number} is approximately {result}")
+    if valid_input(number):
+        result = newton_recursive(number)
+        print(f"Square root of {number} is approximately {result}")
+
 """
 =============================
 Unit Testing for newton_recursive()
