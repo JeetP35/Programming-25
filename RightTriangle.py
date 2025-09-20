@@ -2,11 +2,17 @@ def TriangleInput():
     num1 = float(input("Enter the length of one arm side: "))
     num2 = float(input("Enter the length of the other side: "))
     boolHypo = input("Is this second side the hypotenuse? (1 for Yes, 0 for No): ")
-    return num1, num2, boolHypo
+    return num1, num2, True if boolHypo == '1' else False
 
 
 def InputValid(num1, num2):
-    return num1 > 0 and num2 > 0
+    try:
+        if num1 > 0 and num2 > 0:
+            return True
+        else:
+            return False
+    except ValueError:
+        return False
 
 
 def HypoSideSolver(num1, num2):
@@ -29,12 +35,12 @@ def NewtonSqrt(number, max_iterations=1000, tolerance=1e-10):
 
 def SolveTriangle(num1, num2, boolHypo):
     if InputValid(num1, num2):
-        if boolHypo == '1':
+        if boolHypo == True:
             result = HypoSideSolver(num1, num2)
             finalResult = NewtonSqrt(result)
             print(f"\nGiven sides: {num1}, {num2}")
             print(f"The length of the hypotenuse side is approximately {finalResult}\n")
-        elif boolHypo == '0':
+        elif boolHypo == False:
             if num2 > num1:
                 result = ArmSideSolver(num2, num1)
                 finalResult = NewtonSqrt(result)
