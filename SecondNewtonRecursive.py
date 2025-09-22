@@ -1,60 +1,76 @@
-def valid_input(number):
+def valid_input(value):
     try:
+        number = float(value)
         if number >= 0:
-            return True
+            return "ok", number
         else:
-            print("Input must be a non-negative number.")
-            return False
+            return "negative", None
     except ValueError:
-        print("Invalid input. Please enter a numeric value.")
-        return False
+        return "non-numeric", None
 
-
-def newton_recursive(number, estimate=None, tolerance=1e-100, max_iterations=1000):
+def newton_sqrt(number, tolerance=1e-1000, max_iterations=1000):
     if number == 0:
-        return 0
-    if estimate is None:
-        estimate = number / 2
+        return 0.0
+    estimate = number / 2
+    for _ in range(max_iterations):
+        new_estimate = (estimate + number / estimate) / 2
+        if abs(new_estimate - estimate) < tolerance * abs(new_estimate):
+            return new_estimate
+        estimate = new_estimate
+    return estimate
 
-    new_estimate = (estimate + number / estimate) / 2
-
-    if abs(new_estimate - estimate) < tolerance:
-        return new_estimate
-
-    return newton_recursive(number, new_estimate)
+def root_type(number, result, tolerance=1e-10):
+    nearest = round(result)
+    return abs(nearest**2 - number) < tolerance
 
 while True:
-    number = float(input("Enter a non-negative number to square root: "))
-    if valid_input(number):
-        result = newton_recursive(number)
-        print(f"Square root of {number} is approximately {result}")
+    number = input("Enter a number to square root: ")
+    status, num_val = valid_input(number)
 
+    if status == "ok":
+        result = newton_sqrt(num_val)
+        print(f"Square root of {num_val} is {result}")
+        if num_val != 0:
+            if root_type(num_val, result):
+                print(f"{result} is a perfect square root")
+            else:
+                print(f"{result} is an irrational root")
+    elif status == "negative":
+        print("Invalid input: number must be non-negative.")
+    elif status == "non-numeric":
+        print("Invalid input: please enter a numeric value.")
+        
 """
-=============================
-Unit Testing for newton_recursive()
-=============================
+=================
+Unit Testing
+=================
 
-1. Input: 0
-Expected: 0
+Test 1:
+input : 4
+expected output : Square root of 4.0 is 2.0
+                  2.0 is a perfect square root
+output : Square root of 4.0 is 2.0
+         2.0 is a perfect square root
 
-2. Input: 1
-Expected: 1
+Test 2:
+input : 2
+expected output : Square root of 2.0 is 1.4142135623...
+                  1.4142135623... is an irrational root
+output : Square root of 2.0 is 1.4142135623...
+         1.4142135623... is an irrational root
 
-3. Input: 4
-Expected: 2 (perfect square)
+Test 3:
+input : 0
+expected output : Square root of 0.0 is 0.0
+output : Square root of 0.0 is 0.0
 
-4. Input: 9
-Expected: 3 (perfect square)
+Test 4:
+input : -9
+expected output : Invalid input: number must be non-negative.
+output : Invalid input: number must be non-negative.
 
-5. Input: 2
-Expected: ~1.414213562 (irrational)
-
-6. Input: 10
-Expected: ~3.162277660 (irrational)
-
-7. Input: -5
-Expected: Invalid input message
-
-8. Input: "abc"
-Expected: Invalid input message
+Test 5:
+input : abc
+expected output : Invalid input: please enter a numeric value.
+output : Invalid input: please enter a numeric value.
 """
