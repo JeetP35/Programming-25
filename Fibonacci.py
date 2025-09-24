@@ -1,22 +1,22 @@
-def Fib1(termCount):
-    FibSeq1 = [0, 1]
-    while (len(FibSeq1) < termCount):
-        FibSeq1.append(FibSeq1[-1] + FibSeq1[-2])
-    return FibSeq1[:termCount]
+def fib1(termCount):
+    seq = [0, 1]
+    while len(seq) < termCount:
+        seq.append(seq[-1] + seq[-2])
+    return seq[:termCount]
 
-def Fib2(startIndex, termCount):
-    FibSeq2 = [0, 1]
-    while ((len(FibSeq2)) < (startIndex + termCount)):
-        FibSeq2.append(FibSeq2[-1] + FibSeq2[-2])
-    return FibSeq2[startIndex:startIndex + termCount]
+def fib2(startIndex, termCount):
+    seq = [0, 1]
+    while len(seq) < startIndex + termCount:
+        seq.append(seq[-1] + seq[-2])
+    return seq[startIndex:startIndex + termCount]
 
-def validInput(value):
+def validInput(value, minValue):
     try:
-        number = float(value)
-        if number > 0:
-            return "ok", number
+        num = int(value)
+        if num >= minValue:
+            return "ok", num
         else:
-            return "zero-or-negative", None
+            return "too-small", None
     except ValueError:
         return "non-numeric", None
 
@@ -30,63 +30,39 @@ def primeFactors(number):
         divisor += 1
     return factors
 
-def Assignment():
-    termCount = input("Enter the number of terms you want in the Fibonacci sequence: ")
-    status, termCount = validInput(termCount)
+def assignment():
+    termCount = input("Enter how many Fibonacci terms: ")
+    status, termCount = validInput(termCount, 2)
     if status == "ok":
-        termCount = int(termCount)
-        if termCount >= 2:
-            print(Fib1(termCount))
-            break
-        else:
-            print("Please enter a number greater than or equal to 2")
-    elif status == "zero-or-negative":
-        print("Please enter a number greater than 0")
-    elif status == "non-numeric":
-        print("Please enter a valid number")
+        print(fib1(termCount))
+    elif status == "too-small":
+        print("Enter a number ≥ 2")
+    else:
+        print("Enter a valid integer")
 
-
-    fibStart = input("Enter the starting index of the Fibonacci sequence: ")
-    status, fibStart = validInput(fibStart)
+    start = input("Enter Fibonacci start index: ")
+    status, start = validInput(start, 0)
     if status == "ok":
-        fibStart = int(fibStart)
-        if fibStart >= 0:
-            print(Fib2(fibStart, termCount))
-            break
+        count = input("Enter how many terms: ")
+        status, count = validInput(count, 2)
+        if status == "ok":
+            print(fib2(start, count))
+        elif status == "too-small":
+            print("Enter a number ≥ 2")
         else:
-            print("Please enter a number greater than or equal to 0")
-    elif status == "zero-or-negative":
-        print("Please enter a number greater than or equal to 0")
-    elif status == "non-numeric":
-        print("Please enter a valid number")
-    fib2TermCount = input("Enter the number of terms you want in the Fibonacci sequence: ")
-    status, fib2TermCount = validInput(fib2TermCount)
+            print("Enter a valid integer")
+    elif status == "too-small":
+        print("Start index must be ≥ 0")
+    else:
+        print("Enter a valid integer")
+
+    number = input("Enter a number to factorize: ")
+    status, number = validInput(number, 2)
     if status == "ok":
-        fib2TermCount = int(fib2TermCount)
-        if fib2TermCount >= 2:
-            print(Fib2(fibStart, fib2TermCount))
-            break
-        else:
-            print("Please enter a number greater than or equal to 2")
-    elif status == "zero-or-negative":
-        print("Please enter a number greater than or equal to 2")
-    elif status == "non-numeric":
-        print("Please enter a valid number")
+        print(primeFactors(number))
+    elif status == "too-small":
+        print("Enter a number ≥ 2")
+    else:
+        print("Enter a valid integer")
 
-
-    primeInput = input("Enter a number to find its prime factors: ")
-    status, primeInput = validInput(primeInput)
-    if status == "ok":
-        primeInput = int(primeInput)
-        if primeInput >= 2:
-            print(primeFactors(primeInput))
-            break
-        else:
-            print("Please enter a number greater than or equal to 2")
-    elif status == "zero-or-negative":
-        print("Please enter a number greater than or equal to 2")
-    elif status == "non-numeric":
-        print("Please enter a valid number")
-
-while True:
-    Assignment()
+assignment()
