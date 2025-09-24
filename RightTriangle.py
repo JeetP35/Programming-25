@@ -76,7 +76,8 @@ def triangleSolver():
 
 while True:
     triangleSolver()
-    
+
+
 '''
 Input 1 (Arm Length) : 3
 Input 2 (Another Length) : 4
