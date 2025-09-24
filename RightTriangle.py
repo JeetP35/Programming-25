@@ -90,10 +90,10 @@ Input 1 (Arm Length) : 3
 Input 2 (Another Length) : 5
 Input 3 (Confirmation) : 1 ("Yes, one of the input is hypotenuse")
 
-Expected Output : 
+Expected Output :
     Hypotenuse is 5
     Missing Length is 4
-Output : 
+Output :
     Hypotenuse is 5
     Missing Length is 4
 
@@ -103,10 +103,10 @@ Input 1 (Arm Length) : 5
 Input 2 (Another Length) : 10
 Input 3 (Confirmation) : 1 ("Yes, one of the input is hypotenuse")
 
-Expected Output : 
+Expected Output :
     Hypotenuse is 10.0
     Missing Length is 8.660254037844386
-Output : 
+Output :
     Hypotenuse is 10.0
     Missing Length is 8.660254037844386
 
