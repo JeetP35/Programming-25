@@ -9,4 +9,4 @@ def estimatePi(points):
     print(f"Estimated value of Pi with {points} points: {pi_est}")
     return
 
-estimatePi(100000000)
+estimatePi(1000000)
