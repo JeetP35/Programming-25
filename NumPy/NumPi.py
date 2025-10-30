@@ -1,12 +1,12 @@
 import numpy as np
-# import math
 
-def estimatePi(points):
-    x = np.random.random(points)
-    y = np.random.random(points)
-    inside = (x**2 + y**2) <= 1
-    pi_est = 4 * np.sum(inside) / points
-    print(f"Estimated value of Pi with {points} points: {pi_est}")
-    return
+def estimate_pi(n):
+    x = np.random.rand(n)
+    y = np.random.rand(n)
+    inside_circle = (x ** 2 + y ** 2) <= 1
+    r = np.sum(inside_circle)
+    return 4 * r / n
 
-estimatePi(1000000)
+n = 1000000
+pi_value = estimate_pi(n)
+print("Estimated π =", pi_value)
