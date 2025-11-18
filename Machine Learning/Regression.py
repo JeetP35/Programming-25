@@ -4,6 +4,7 @@ import pandas as pd
 
 df = pd.read_csv('student_habits_performance.csv')
 
+
 x = np.array([1, 2, 2.5, 3, 4, 4.5, 5, 6, 7, 8, 9])
 y_data = np.array([33, 41, 45, 51, 62, 68, 74, 80, 85, 90, 97])
 b = 30
