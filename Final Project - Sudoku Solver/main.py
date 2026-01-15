@@ -11,6 +11,14 @@ def validInt(value):
             return "too-small", None
     except ValueError:
         return "non-numeric", None
+    
+
+def validStr(value):
+    valid_difficulties = ["easy", "medium", "hard", "extreme"]
+    if value in valid_difficulties:
+        return value
+    else:
+        return "medium"  # default difficulty
 
 
 def isValid(puzzle, n, row, col, value):
@@ -70,12 +78,20 @@ def generateFullGrid(n):
     return puzzle  # return a complete valid Sudoku grid
 
 
-def generatePuzzle(n):
+def generatePuzzle(n, difficulty):
     puzzle = generateFullGrid(n)
     size = n * n
 
     # remove about half of the values to create a puzzle
-    removals = (n * n) ** 2 // 2
+    if difficulty == "easy":
+        removals = (size * size) // 3
+    elif difficulty == "medium":
+        removals = (size * size) // 2
+    elif difficulty == "hard":
+        removals = (size * size) * 2 // 3
+    elif difficulty == "extreme":
+        removals = (size * size) * 3 // 4
+
     attempts = removals * 5
 
     # randomly remove values while keeping the puzzle solvable
@@ -140,6 +156,9 @@ def main():
     # get subgrid size from user (3 → 9x9, 2 → 4x4)
     num_input = input("Enter subgrid size (3 for 9x9): ")
     status, n = validInt(num_input)
+    diff_input = input("Enter difficulty (easy, medium, hard, extreme): ").lower()
+    difficulty = validStr(diff_input)
+
 
     # handle invalid input
     if status == "non-numeric":
@@ -150,7 +169,7 @@ def main():
         return
 
     # generate a Sudoku puzzle
-    puzzle = generatePuzzle(n)
+    puzzle = generatePuzzle(n, difficulty)
 
     # create a copy and solve it
     solution = puzzle.copy()
