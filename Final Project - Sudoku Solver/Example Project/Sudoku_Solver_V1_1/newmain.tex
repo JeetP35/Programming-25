@@ -1,0 +1,262 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% PREAMBLE
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass{article}
+
+% PACKAGES
+\usepackage[margin=1in]{geometry}         % For setting page margins
+\usepackage{amsmath}                        % For advanced math environments
+\usepackage{graphicx}                       % For including images
+\usepackage{hyperref}                       % For hyperlinks and document metadata
+\usepackage{xcolor}                         % For defining colors
+\usepackage{listings}                       % For formatting code listings
+\usepackage{beramono}                       % A nice monospaced font for code
+\usepackage{courier}                        % Use Courier for typewriter font
+
+% HYPERREF SETUP
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    pdftitle={Algorithmic Solving of Sudoku Puzzles},
+    pdfauthor={Lukas Gribbin},
+}
+
+% LISTINGS (CODE) STYLE DEFINITION
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2,
+    frame=single,
+    framerule=0pt,
+    framesep=5pt,
+    xleftmargin=15pt,
+    xrightmargin=15pt,
+}
+\lstset{style=mystyle}
+
+% Custom command for Sudoku grids
+\newenvironment{sudokugrid}{%
+  \begin{center}
+  \ttfamily
+}{%
+  \end{center}
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DOCUMENT INFORMATION
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\title{\sffamily\bfseries Algorithmic Solving of Sudoku Puzzles}
+\author{
+    Lukas Gribbin \\
+    \href{mailto:lukasgribbin@gmail.com}{\texttt{lukasgribbin@gmail.com}} \\
+    \vspace{1ex}
+    \small{Project Inspired by Dr. James Bailey}
+}
+\date{Version 2.0}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% BEGIN DOCUMENT
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+
+\maketitle
+\thispagestyle{empty} % No page number on the title page
+
+\begin{abstract}
+\noindent This paper outlines a computational approach to solving Sudoku puzzles. The method is based on creating "masks" for each digit to determine all possible valid locations. By leveraging NumPy's vectorization capabilities, we can efficiently generate these masks and identify cells with only one possible digit to iteratively solve the puzzle. The implementation is a single, clean Python script that showcases the power of array-based computation over traditional loops.
+\end{abstract}
+
+\section{Introduction -- Describing the Problem}
+
+A Sudoku puzzle is represented as a $9 \times 9$ grid. Empty cells are denoted by a $0$, while pre-filled cells contain their respective numbers. The solver's task is to fill the empty cells with digits from 1 to 9, adhering to the following rules:
+\begin{enumerate}
+    \item Each row must contain every digit from 1 to 9 exactly once.
+    \item Each column must contain every digit from 1 to 9 exactly once.
+    \item Each of the nine $3 \times 3$ subgrids must contain every digit from 1 to 9 exactly once.
+\end{enumerate}
+
+The initial configuration of numbers determines the puzzle's difficulty. Figure \ref{fig:puzzle_representation} illustrates a sample puzzle and its corresponding array representation.
+
+\begin{figure}[h!]
+    \centering
+    \begin{tabular}{cc}
+        \includegraphics[scale=0.45]{sudoku.PNG} & \includegraphics[scale=0.6]{sudokuarray.PNG} \\
+    \end{tabular}
+    \caption{A Sudoku puzzle and its array representation.}
+    \label{fig:puzzle_representation}
+\end{figure}
+
+\newpage
+
+\section{The Vectorized Solving Process}
+
+Our approach centers on two key functions: `createmasks` and `solveknowns`. Instead of looping through cells one-by-one, these functions use NumPy to perform operations on the entire grid at once, a technique known as vectorization. This leads to code that is not only faster but also more concise and readable.
+
+\subsection{The `create\_masks` Function}
+
+The core of our method is generating a set of boolean masks. A mask for a digit $x$ is a $9 \times 9$ grid where `True` indicates a possible location for $x$. We create a single $9 \times 9 \times 9$ array to hold all nine masks. The process is broken down into a series of efficient, vectorized steps.
+
+\subsubsection*{Step 1: Initialization}
+First, we create our main $9 \times 9 \times 9$ array. We initialize it with all `True` values, starting with the assumption that, initially, any digit could potentially go in any cell.
+
+\begin{lstlisting}[language=Python, numbers=none]
+    masks = np.ones((9, 9, 9), dtype=bool)
+\end{lstlisting}
+
+\subsubsection*{Step 2: Rule Out Filled Cells}
+Next, we find all the cells that already have a number in them (i.e., are not zero). A filled cell cannot be a possible location for \textit{any} digit. Using boolean indexing, NumPy lets us apply this 2D "filled cell" mask across all 9 layers of our 3D masks array at once, setting these positions to `False` in a single command.
+
+\begin{lstlisting}[language=Python, numbers=none]
+    filled_cells = puzzle != 0
+    masks[:, filled_cells] = False
+\end{lstlisting}
+
+\subsubsection*{Step 3: Apply Row and Column Constraints}
+Now, we loop through the digits 1 to 9. For each digit already on the board, we find its location(s). At these locations, we then mark that digit's entire row and column as `False` in its corresponding mask layer. NumPy's slicing `[:]` allows us to update the entire row or column without a sub-loop.
+
+\begin{lstlisting}[language=Python, numbers=none]
+    for digit in range(1, 10):
+        rows, cols = np.where(puzzle == digit)
+        for r, c in zip(rows, cols):
+            # Rule out the row and column for this digit
+            masks[digit - 1, r, :] = False
+            masks[digit - 1, :, c] = False
+\end{lstlisting}
+
+\subsubsection*{Step 4: Apply 3x3 Subgrid Constraints (The Vectorization Trick)}
+This is the most powerful step. For each existing digit, we also need to rule out its 3x3 subgrid. Instead of a complex series of `if/elif` statements, we use a simple arithmetic calculation. For any cell `(r, c)`, integer division (`//`) instantly finds the top-left corner of its subgrid: `(3 * (r // 3), 3 * (c // 3))`. With this corner, we use array slicing to set the entire $3 \times 3$ region to `False` in one vectorized operation. This is the heart of the optimization.
+
+\begin{lstlisting}[language=Python, numbers=none]
+            # Rule out the 3x3 subgrid for this digit
+            start_row, start_col = 3 * (r // 3), 3 * (c // 3)
+            masks[digit - 1, start_row:start_row+3, start_col:start_col+3] = False
+\end{lstlisting}
+
+After these steps, the `masks` array is complete and accurately represents every valid move for every digit on the board.
+
+\subsection{The `solve\_knowns` Function}
+With the masks generated, we can find cells that have only one possible value. We achieve this by summing the nine masks together.
+\begin{itemize}
+    \item \textbf{Counting Possibilities:} We sum our $9 \times 9 \times 9$ mask array along the "digit" axis (`axis=0`). Since `True` acts as 1 and `False` as 0, the result is a $9 \times 9$ grid where each cell's value is the total count of possible digits.
+    \item \textbf{Finding Solutions:} A `1` in this "possibility count" grid means that cell is immediately solvable.
+    \item \textbf{Identifying the Digit:} To find *which* digit it is, we look at the 1D slice of masks for that cell. The `np.argmax()` function on this slice returns the index of the `True` value, instantly telling us the correct digit without needing a loop.
+\end{itemize}
+
+\subsection{Putting It All Together}
+The main `solve` function orchestrates the process. It's a simple loop that:
+\begin{enumerate}
+    \item Creates the masks for the current puzzle state.
+    \item Solves for all known values.
+    \item Prints the updated puzzle.
+    \item Repeats until the puzzle is solved or no progress is made in a step.
+\end{enumerate}
+The complete code follows in Listing \ref{lst:sudoku_solver}. \\
+
+\begin{lstlisting}[language=Python, caption={The Complete Vectorized Sudoku Solver}, label={lst:sudoku_solver}, captionpos=b]
+import numpy as np
+
+def create_masks(puzzle: np.ndarray) -> np.ndarray:
+    """
+    Generates a set of boolean masks for a Sudoku puzzle.
+    Each mask corresponds to a digit (1-9) and indicates all possible valid
+    locations for that digit. A `True` value means the spot is possible.
+    """
+    masks = np.ones((9, 9, 9), dtype=bool)
+    filled_cells = puzzle != 0
+    masks[:, filled_cells] = False
+
+    for digit in range(1, 10):
+        rows, cols = np.where(puzzle == digit)
+        for r, c in zip(rows, cols):
+            masks[digit - 1, r, :] = False
+            masks[digit - 1, :, c] = False
+            start_row, start_col = 3 * (r // 3), 3 * (c // 3)
+            masks[digit - 1, start_row:start_row+3, start_col:start_col+3] = False
+            
+    return masks
+
+def solve_knowns(puzzle: np.ndarray, masks: np.ndarray) -> np.ndarray:
+    """
+    Solves for all cells that have only one possible digit.
+    """
+    possibility_counts = np.sum(masks, axis=0)
+    solvable_indices = np.where((puzzle == 0) & (possibility_counts == 1))
+
+    for r, c in zip(*solvable_indices):
+        digit_mask = masks[:, r, c]
+        digit = np.argmax(digit_mask) + 1
+        puzzle[r, c] = digit
+        
+    return puzzle
+
+def solve(puzzle: np.ndarray):
+    """
+    Iteratively solves a Sudoku puzzle using a mask-based approach.
+    """
+    print("Original Puzzle:")
+    print(puzzle)
+    stuck_check = np.copy(puzzle)
+    
+    for i in range(81):
+        print(f"\n--- Step {i+1} ---")
+        masks = create_masks(puzzle)
+        puzzle = solve_knowns(puzzle, masks)
+        print(puzzle)
+
+        if np.all(puzzle != 0):
+            print(f"\n_Puzzle solved in {i+1} steps!_")
+            return
+
+        if np.array_equal(puzzle, stuck_check):
+            print("\n_Solver stuck. The puzzle may require advanced techniques._")
+            return
+            
+        stuck_check = np.copy(puzzle)
+
+
+initial_puzzle = np.array([
+    [6, 1, 0, 0, 0, 0, 0, 0, 0],
+    [0, 5, 0, 0, 0, 8, 6, 0, 0],
+    [9, 8, 4, 0, 7, 6, 0, 0, 3],
+    [0, 9, 0, 4, 0, 0, 0, 3, 0],
+    [7, 0, 0, 0, 9, 3, 0, 8, 0],
+    [8, 0, 2, 0, 0, 1, 0, 6, 0],
+    [0, 7, 8, 5, 0, 0, 9, 2, 6],
+    [0, 0, 0, 0, 0, 7, 1, 5, 0],
+    [5, 0, 0, 8, 2, 9, 3, 4, 7]
+])
+    
+solve(initial_puzzle)
+\end{lstlisting}
+
+\section{Future Additions}
+
+Currently, this algorithm can only solve simple puzzles where a logical next step is always available. Future work will focus on the following:
+\begin{itemize}
+    \item Implementing a backtracking algorithm (a form of educated guessing) to handle more difficult puzzles that require trial and error.
+    \item Developing a metric to rate puzzle difficulty, possibly based on the number of iterations and backtracking steps required.
+    \item Creating a more user-friendly interface for inputting puzzles and displaying the solution process.
+\end{itemize}
+
+\end{document}
