@@ -178,7 +178,7 @@ def main():
     # display results in the console
     print("Generated Puzzle:")
     print(puzzle)
-
+    print('-----------------------------------------')
     print("Solved Puzzle:")
     print(solution)
 
