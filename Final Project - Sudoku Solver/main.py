@@ -21,7 +21,6 @@ def isValid(puzzle, n, row, col, value):
     # check column
     if value in puzzle[:, col]:
         return False
-
     # check subgrid
     startRow = (row // n) * n
     startCol = (col // n) * n
@@ -54,7 +53,6 @@ def solveSudoku(puzzle, n):
                         # recursively attempt to solve the rest of the grid
                         if solveSudoku(puzzle, n):
                             return True
-
                         # undo placement if it leads to a dead end
                         puzzle[row, col] = 0
 
