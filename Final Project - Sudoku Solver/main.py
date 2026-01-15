@@ -1,125 +1,149 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def validInt(value, minValue):
+
+def validInt(value):
     try:
         num = int(value)
-        if num >= minValue:
+        if num >= 2:
             return "ok", num
         else:
             return "too-small", None
     except ValueError:
         return "non-numeric", None
 
-def createMasks(puzzle, n):
-    size = n * n
-    masks = []
 
-    for value in range(1, size + 1):
-        mask = np.ones((size, size), dtype=int)
+def isValid(puzzle, n, row, col, value):
+    # check row
+    if value in puzzle[row]:
+        return False
 
-        positions = np.argwhere(puzzle == value)
-        for r, c in positions:
-            mask[r, :] = 0
-            mask[:, c] = 0
+    # check column
+    if value in puzzle[:, col]:
+        return False
 
-            sr = (r // n) * n
-            sc = (c // n) * n
-            mask[sr:sr+n, sc:sc+n] = 0
+    # check subgrid
+    startRow = (row // n) * n
+    startCol = (col // n) * n
 
-        mask[puzzle != 0] = 0
-        masks.append(mask)
+    # check if the value already exists in the subgrid
+    # subgrid starts at (startRow, startCol) and is n x n in size
+    if value in puzzle[startRow:startRow+n, startCol:startCol+n]:
+        return False  # value cannot be placed here
+    # value is valid in row, column, and subgrid
+    return True
 
-    return np.array(masks)
-
-def solveKnown(puzzle, n):
-    masks = createMasks(puzzle, n)
-    overlap = np.sum(masks, axis=0)
-
-    rows, cols = np.where(overlap == 1)
-    for i in range(len(rows)):
-        r = rows[i]
-        c = cols[i]
-        value = np.where(masks[:, r, c] == 1)[0][0] + 1
-        puzzle[r, c] = value
-
-    return puzzle
 
 def solveSudoku(puzzle, n):
-    while True:
-        before = puzzle.copy()
-        puzzle = solveKnown(puzzle, n)
-        if np.array_equal(before, puzzle):
-            break
-
-    if np.all(puzzle != 0):
-        return True
-
     size = n * n
-    for r in range(size):
-        for c in range(size):
-            if puzzle[r, c] == 0:
-                for value in range(1, size + 1):
-                    test = puzzle.copy()
-                    test[r, c] = value
-                    if createMasks(test, n)[value - 1, r, c] == 1:
-                        puzzle[r, c] = value
+
+    # loop through the grid to find an empty cell
+    for row in range(size):
+        for col in range(size):
+            if puzzle[row, col] == 0:
+
+                # try numbers in random order so puzzles differ
+                numbers = np.arange(1, size + 1)
+                np.random.shuffle(numbers)
+
+                for value in numbers:
+                    # check if the value is valid in this position
+                    if isValid(puzzle, n, row, col, value):
+                        puzzle[row, col] = value
+
+                        # recursively attempt to solve the rest of the grid
                         if solveSudoku(puzzle, n):
                             return True
-                        puzzle[r, c] = 0
+
+                        # undo placement if it leads to a dead end
+                        puzzle[row, col] = 0
+
+                # no valid number fits here, trigger backtracking
                 return False
-    return False
+    # no empty cells left, puzzle is solved
+    return True
+
 
 def generateFullGrid(n):
-    size = n * n
-    puzzle = np.zeros((size, size), dtype=int)
+    size = n * n  # total grid size
+    puzzle = np.zeros((size, size), dtype=int)  # start with an empty grid
+    # fill the grid using the Sudoku solver
     solveSudoku(puzzle, n)
-    return puzzle
+    return puzzle  # return a complete valid Sudoku grid
+
 
 def generatePuzzle(n):
     puzzle = generateFullGrid(n)
     size = n * n
-    removals = n * n * 3
 
-    while removals > 0:
-        r = np.random.randint(0, size)
-        c = np.random.randint(0, size)
-        if puzzle[r, c] != 0:
-            backup = puzzle[r, c]
-            puzzle[r, c] = 0
+    # remove about half of the values to create a puzzle
+    removals = (n * n) ** 2 // 2
+    attempts = removals * 5
+
+    # randomly remove values while keeping the puzzle solvable
+    while removals > 0 and attempts > 0:
+        # pick a random cell in the grid
+        row = np.random.randint(0, size)
+        col = np.random.randint(0, size)
+
+        # only remove a number if the cell is not already empty
+        if puzzle[row, col] != 0:
+            backup = puzzle[row, col]
+            puzzle[row, col] = 0
+
+            # make a copy and try solving it
+            # this checks whether the puzzle is still solvable after removal
             test = puzzle.copy()
-            if not solveSudoku(test, n):
-                puzzle[r, c] = backup
-            else:
+            if solveSudoku(test, n):
                 removals -= 1
-
+            else:
+                # restore the value if removal makes the puzzle unsolvable
+                puzzle[row, col] = backup
+        attempts -= 1
     return puzzle
+
 
 def drawSudoku(puzzle, n, filename):
     size = n * n
-    fig, ax = plt.subplots()
-    ax.imshow(np.zeros((size, size)), cmap="gray_r")
 
+    # create a blank background for the grid
+    plt.imshow(np.zeros((size, size)), cmap="gray_r")
+
+    # every n lines, we reach the edge of a subgrid
+    # for example, in a 9x9 board (n = 3), lines at 0, 3, 6, 9 separate the 3x3 boxes
     for i in range(size + 1):
-        lw = 2 if i % n == 0 else 0.5
-        ax.axhline(i - 0.5, linewidth=lw, color="black")
-        ax.axvline(i - 0.5, linewidth=lw, color="black")
+        if i % n == 0:
+            lineWidth = 2      # thicker line for subgrid boundary
+        else:
+            lineWidth = 0.5    # regular cell line
 
-    for r in range(size):
-        for c in range(size):
-            if puzzle[r, c] != 0:
-                ax.text(c, r, str(puzzle[r, c]),
-                        ha="center", va="center", fontsize=14)
+        # offset by 0.5 so lines appear between cells
+        plt.axhline(i - 0.5, linewidth=lineWidth, color="black")
+        plt.axvline(i - 0.5, linewidth=lineWidth, color="black")
 
-    ax.set_xticks([])
-    ax.set_yticks([])
+    # draw the numbers in each non-empty cell
+    for row in range(size):
+        for col in range(size):
+            if puzzle[row, col] != 0:
+                # place number in the center of the cell
+                plt.text(col, row, str(puzzle[row, col]),
+                         ha="center", va="center", fontsize=14)
+
+    # remove axis labels for a clean Sudoku look
+    plt.xticks([])
+    plt.yticks([])
+
+    # save the image and close the figure
     plt.savefig(filename)
     plt.close()
 
-def main():
-    n_input = input("Enter subgrid size (3 for 9x9): ")
-    status, n = validInt(n_input, 2)
 
+def main():
+    # get subgrid size from user (3 → 9x9, 2 → 4x4)
+    num_input = input("Enter subgrid size (3 for 9x9): ")
+    status, n = validInt(num_input)
+
+    # handle invalid input
     if status == "non-numeric":
         print("Enter a valid integer")
         return
@@ -127,18 +151,23 @@ def main():
         print("Subgrid size must be 2 or greater")
         return
 
+    # generate a Sudoku puzzle
     puzzle = generatePuzzle(n)
+
+    # create a copy and solve it
     solution = puzzle.copy()
     solveSudoku(solution, n)
 
+    # display results in the console
     print("Generated Puzzle:")
     print(puzzle)
 
     print("Solved Puzzle:")
     print(solution)
 
+    # save images of the puzzle and solution
     drawSudoku(puzzle, n, "sudoku_puzzle.png")
     drawSudoku(solution, n, "sudoku_solution.png")
 
-while True:
-    main()
+
+main()
