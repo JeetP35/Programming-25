@@ -156,7 +156,7 @@ def main():
     # get subgrid size from user (3 → 9x9, 2 → 4x4)
     num_input = input("Enter subgrid size (3 for 9x9): ")
     status, n = validInt(num_input)
-    diff_input = input("Enter difficulty (easy, medium, hard, extreme): ").lower()
+    diff_input = input("\nEnter difficulty (easy, medium, hard, extreme): ").lower()
     difficulty = validStr(diff_input)
 
 
@@ -176,9 +176,9 @@ def main():
     solveSudoku(solution, n)
 
     # display results in the console
-    print("Generated Puzzle:")
+    print("\nGenerated Puzzle:")
     print(puzzle)
-    print('-----------------------------------------')
+    print('\n-----------------------------------------\n')
     print("Solved Puzzle:")
     print(solution)
 
